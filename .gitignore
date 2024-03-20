@@ -1,0 +1,4 @@
+*.db
+*.wal
+*.sql
+.ipynb_checkpoints
