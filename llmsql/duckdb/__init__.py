@@ -13,9 +13,14 @@ def llm_udf(prompt: str, contextargs: str) -> str:
 
 def rewrite_sql(sql_query: str) -> str:
     """Intercepts DuckDB SQL query string and outputs an updated query."""
+    conn = duckdb.connect(database=':memory:', read_only=False)
 
     # Define the regular expression pattern to match the LLM expression
     pattern = r"LLM\('\w+.*?', .+?\)"
+    table_name = re.match(sql_query, "(?i)from.+?(\w+)").group(0)
+    table = conn.table(table_name)
+
+    # extract table name from sql query string?
 
     # Function to transform the matched LLM expression
     def transform_match(match):
@@ -25,6 +30,18 @@ def rewrite_sql(sql_query: str) -> str:
         prompt = input_str[prompt_start:prompt_end]
         args_str = input_str[prompt_end+3:-1]  # Skip past "', " and avoid the last ")"
         args = args_str.split(", ")
+
+        ### IN PROGRESS ORDERING CODE
+        arg_scores = []
+        for arg in args:
+            # avg_length = table.apply(len, 'mean', projected_columns=arg)
+            unique_vals = len(table.unique(arg))
+            # arg_scores.append(avg_length / unique_vals)
+            arg_scores.append(1 / unique_vals)
+        args = [arg for _, arg in sorted(arg_scores, args, reverse=True)]
+        table.sort(args)
+
+
         # For each value, format it as "'value', value"
         formatted_args = [f"'{val}', {val}" for val in args]
         # Join the formatted values into a single string
