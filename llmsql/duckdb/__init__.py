@@ -17,8 +17,13 @@ def rewrite_sql(sql_query: str) -> str:
 
     # Define the regular expression pattern to match the LLM expression
     pattern = r"LLM\('\w+.*?', .+?\)"
-    table_name = re.match(sql_query, "(?i)from.+?(\w+)").group(0)
-    table = conn.table(table_name)
+    table_names = [x[1] for x in re.findall(sql_query, "((?i)from|(?i)join)\s+(?<table>\S+).+?")]
+    table = conn.table(table_names[0])
+    if len(table_names) > 1:
+        join_rule = re.findall(sql_query, "(?i)on\s+([\S\s]+)")[0]
+        for i in range(1, len(table_names)):
+            table = table.join(conn.table(table_names[i], join_rule))
+    # table = conn.table(table_name)
 
     # extract table name from sql query string?
 
