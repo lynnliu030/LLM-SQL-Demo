@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 try:
     import vllm
 except ImportError as e:
-    raise ImportError("Run `pip install llmsql[vllm] to use the vllm backend.")
+    raise ImportError("Run `pip install llmsql[vllm]` to use the vllm backend.")
 
 from vllm import EngineArgs, LLM as LLMEntrypoint, SamplingParams
 
