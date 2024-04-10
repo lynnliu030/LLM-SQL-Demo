@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, List
 
 import openai
 from llmsql.llm.base import DEFAULT_SYSTEM_PROMPT, LLM
@@ -15,7 +15,7 @@ class OpenAI(LLM):
         self.api_key = api_key
     
     # TODO: Few-shot examples
-    def execute(self, fields: Dict[str, str], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT):
+    def execute(self, fields: Dict[str, str], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
         fields_json = json.dumps(fields)
 
         user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
@@ -31,5 +31,8 @@ class OpenAI(LLM):
         )
         output = response.choices[0].message.content
         return output
+
+    def execute_batch(self, fields: List[Dict[str, str]], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> List[str]:
+        return [self.execute(field, query, system_prompt) for field in fields]
 
 
