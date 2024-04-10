@@ -53,7 +53,6 @@ class vLLM(LLM):
     def execute_batch(self, fields: List[Dict[str, str]], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> List[str]:
         """Batched version of `execute`."""
 
-        import pdb; pdb.set_trace()
         fields_json_list = [json.dumps(field) for field in fields]
         user_prompt = "Given the following data:\n {fields_json} \n answer the below query:\n"
 
