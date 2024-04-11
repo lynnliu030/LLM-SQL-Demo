@@ -20,6 +20,9 @@ class vLLM(LLM):
         
         # Enable prefix caching.
         self.engine_args.enable_prefix_caching = True
+        # Disable log stats by default
+        self.engine_args.disable_log_stats = True
+
         self.engine = LLMEntrypoint(**asdict(self.engine_args))
         self.tokenizer = self.engine.get_tokenizer()
     
@@ -30,8 +33,7 @@ class vLLM(LLM):
         user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
         user_prompt += query
 
-        if not self.tokenizer.use_default_system_prompt:
-            print("The provided model does not accept a system prompt. Skipping system prompt...")
+        if hasattr(self.tokenizer, "use_default_system_prompt") and not self.tokenizer.use_default_system_prompt:
             messages = []
         else:
             messages = [
@@ -46,7 +48,7 @@ class vLLM(LLM):
             add_generation_prompt=True
         )
 
-        output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params)
+        output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params, use_tqdm=False)
         assert len(output) == 1
         return output[0].outputs[-1].text
 
