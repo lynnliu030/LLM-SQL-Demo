@@ -20,6 +20,9 @@ class vLLM(LLM):
         
         # Enable prefix caching.
         self.engine_args.enable_prefix_caching = True
+        # Disable log stats by default
+        self.engine_args.disable_log_stats = True
+
         self.engine = LLMEntrypoint(**asdict(self.engine_args))
         self.tokenizer = self.engine.get_tokenizer()
     
@@ -29,24 +32,31 @@ class vLLM(LLM):
 
         user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
         user_prompt += query
-
-        if not self.tokenizer.use_default_system_prompt:
-            print("The provided model does not accept a system prompt. Skipping system prompt...")
-            messages = []
-        else:
-            messages = [
+        
+        messages = [
             {"role": "system", "content": system_prompt},
         ]
         messages.append({"role": "user", "content": user_prompt})
 
-        # Construct a prompt for the chosen model given OpenAI style messages.
-        prompt = self.tokenizer.apply_chat_template(
-            conversation=messages,
-            tokenize=False,
-            add_generation_prompt=True
-        )
+        successful_prompt_generation = False
+        while not successful_prompt_generation:
+            try:
+                # Construct a prompt for the chosen model given OpenAI style messages.
+                prompt = self.tokenizer.apply_chat_template(
+                    conversation=messages,
+                    tokenize=False,
+                    add_generation_prompt=True
+                )
+            except Exception as e:
+                if messages[0]["role"] == "system":
+                    # Try again without system prompt
+                    messages = messages[1:]
+                else:
+                    raise e
+            else:
+                successful_prompt_generation = True
 
-        output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params)
+        output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params, use_tqdm=False)
         assert len(output) == 1
         return output[0].outputs[-1].text
 

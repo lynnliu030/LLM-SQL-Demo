@@ -6,6 +6,9 @@ from duckdb import DuckDBPyConnection
 
 from llmsql import REGISTERED_MODEL
 
+if REGISTERED_MODEL is None:
+    raise RuntimeError("Call llmsql.init before importing from llmsql.duckdb")
+    
 def llm_udf(prompt: str, contextargs: str) -> str:
     fields = json.loads(contextargs)
     output = REGISTERED_MODEL.execute(fields=fields, query=prompt)
