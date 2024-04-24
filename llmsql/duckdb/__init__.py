@@ -1,5 +1,7 @@
 import json
 import re
+import numpy as np
+import sqlglot
 
 import duckdb
 from duckdb import DuckDBPyConnection
@@ -39,10 +41,10 @@ def rewrite_sql(sql_query: str) -> str:
         ### IN PROGRESS ORDERING CODE
         arg_scores = []
         for arg in args:
-            # avg_length = table.apply(len, 'mean', projected_columns=arg)
+            avg_length = np.mean([len(x) for x in table.df()[arg]])
             unique_vals = len(table.unique(arg))
-            # arg_scores.append(avg_length / unique_vals)
-            arg_scores.append(1 / unique_vals)
+            arg_scores.append(avg_length / unique_vals)
+            # arg_scores.append(1 / unique_vals)
         args = [arg for _, arg in sorted(arg_scores, args, reverse=True)]
         table.sort(args)
 
