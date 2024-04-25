@@ -68,9 +68,10 @@ class vLLM(LLM):
         """Batched version of `execute`."""
 
         fields_json_list = [json.dumps(field) for field in fields]
-        user_prompt_template = "Given the following data:\n {fields_json} \n answer the below query:\n"
+        user_prompt_template = "Given the following data:\n {{fields_json}} \n answer the below query:\n"
+        user_prompt_template += query
 
-        user_prompts = [user_prompt_template.format(fields_json) for fields_json in fields_json_list]
+        user_prompts = [user_prompt_template.replace("{{fields_json}}", fields_json) for fields_json in fields_json_list]
 
         prompts = [self._generate_prompt(user_prompt=user_prompt, system_prompt=system_prompt) for user_prompt in user_prompts]
 
