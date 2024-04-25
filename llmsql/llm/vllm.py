@@ -25,14 +25,8 @@ class vLLM(LLM):
 
         self.engine = LLMEntrypoint(**asdict(self.engine_args))
         self.tokenizer = self.engine.get_tokenizer()
-    
-    # TODO: Few-shot examples
-    def execute(self, fields: Dict[str, str], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
-        fields_json = json.dumps(fields)
 
-        user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
-        user_prompt += query
-        
+    def _generate_prompt(self, user_prompt: str, system_prompt: str) -> str:
         messages = [
             {"role": "system", "content": system_prompt},
         ]
@@ -55,7 +49,17 @@ class vLLM(LLM):
                     raise e
             else:
                 successful_prompt_generation = True
+        
+        return prompt
+    
+    # TODO: Few-shot examples
+    def execute(self, fields: Dict[str, str], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
+        fields_json = json.dumps(fields)
 
+        user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
+        user_prompt += query
+        
+        prompt = self._generate_prompt(user_prompt=user_prompt, system_prompt=system_prompt)
         output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params, use_tqdm=False)
         assert len(output) == 1
         return output[0].outputs[-1].text
@@ -64,26 +68,11 @@ class vLLM(LLM):
         """Batched version of `execute`."""
 
         fields_json_list = [json.dumps(field) for field in fields]
-        user_prompt = "Given the following data:\n {fields_json} \n answer the below query:\n"
+        user_prompt_template = "Given the following data:\n {fields_json} \n answer the below query:\n"
 
-        if not self.tokenizer.use_default_system_prompt:
-            system_prompt_message = None
-        else:
-            system_prompt_message = {"role": "system", "content": system_prompt}
-        
-        prompts: List[str] = []
-        for fields_json in fields_json_list:
-            if system_prompt_message is not None:
-                messages = [system_prompt_message]
-            else:
-                messages = []
-            messages.append({"role": "user", "content": user_prompt.format(fields_json=fields_json) + query})
+        user_prompts = [user_prompt_template.format(fields_json) for fields_json in fields_json_list]
 
-            prompts.append(self.tokenizer.apply_chat_template(
-                conversation=messages,
-                tokenize=False,
-                add_generation_prompt=True
-            ))
+        prompts = [self._generate_prompt(user_prompt=user_prompt, system_prompt=system_prompt) for user_prompt in user_prompts]
 
         request_outputs = self.engine.generate(prompts=prompts, sampling_params=self.sampling_params)
         assert len(request_outputs) == len(fields)
