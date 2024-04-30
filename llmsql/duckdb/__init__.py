@@ -7,6 +7,30 @@ import duckdb
 from duckdb import DuckDBPyConnection
 
 from llmsql import REGISTERED_MODEL
+from llmsql.llm import LLM
+TABLE = None
+TABLE_SCORES = {}
+ENGINE = REGISTERED_MODEL
+
+def init(table:str, engine: LLM = None):
+    global TABLE
+    global TABLE_SCORES
+    global ENGINE
+    conn = duckdb.connect(database=':memory:', read_only=False)
+    TABLE = conn.table(table)
+    df = TABLE.df()
+    for col in df.columns:
+        avg_length = np.mean([len(x) for x in df[col]])
+        unique_vals = len(TABLE.unique(col))
+        TABLE_SCORES[col] = avg_length / unique_vals
+    if engine:
+        ENGINE = engine
+
+def transform_table(query_cols):
+    col_scores = [TABLE_SCORES[col] for col in query_cols]
+    sorted_cols = [col for _, col in sorted(col_scores, query_cols, reverse=True)]
+    TABLE.sort(sorted_cols)
+    return sorted_cols
 
 def llm_udf(prompt: str, contextargs: str) -> str:
     fields = json.loads(contextargs)
@@ -20,14 +44,15 @@ def rewrite_sql(sql_query: str) -> str:
     # Define the regular expression pattern to match the LLM expression
     pattern = r"LLM\('\w+.*?', .+?\)"
     table_names = [x[1] for x in re.findall(sql_query, "((?i)from|(?i)join)\s+(?<table>\S+).+?")]
-    table = conn.table(table_names[0])
     if len(table_names) > 1:
-        join_rule = re.findall(sql_query, "(?i)on\s+([\S\s]+)")[0]
-        for i in range(1, len(table_names)):
-            table = table.join(conn.table(table_names[i], join_rule))
-    # table = conn.table(table_name)
-
-    # extract table name from sql query string?
+        # TODO in progress join code, must iterate to make more robust
+        # join_rule = re.findall(sql_query, "(?i)on\s+([\S\s]+)")[0]
+        # for i in range(1, len(table_names)):
+        #     table = table.join(conn.table(table_names[i], join_rule))
+        raise ValueError("More than one table in query, only single table is supported")
+    else:
+        if table_names[0] != TABLE:
+            raise AssertionError("More than one table in query, only single table is supported")
 
     # Function to transform the matched LLM expression
     def transform_match(match):
@@ -36,19 +61,8 @@ def rewrite_sql(sql_query: str) -> str:
         prompt_end = input_str.find("',", prompt_start)
         prompt = input_str[prompt_start:prompt_end]
         args_str = input_str[prompt_end+3:-1]  # Skip past "', " and avoid the last ")"
-        args = args_str.split(", ")
-
-        ### IN PROGRESS ORDERING CODE
-        arg_scores = []
-        for arg in args:
-            avg_length = np.mean([len(x) for x in table.df()[arg]])
-            unique_vals = len(table.unique(arg))
-            arg_scores.append(avg_length / unique_vals)
-            # arg_scores.append(1 / unique_vals)
-        args = [arg for _, arg in sorted(arg_scores, args, reverse=True)]
-        table.sort(args)
-
-
+        args = transform_table(args_str.split(", "))
+  
         # For each value, format it as "'value', value"
         formatted_args = [f"'{val}', {val}" for val in args]
         # Join the formatted values into a single string
