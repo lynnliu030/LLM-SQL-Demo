@@ -1,4 +1,4 @@
-from llmsql.pandas.api import LLMQuery
+from llmsql.pandas.functions import LLMQuery
         
         
         
