@@ -1,4 +1,4 @@
-# LLM-SQL-Demo
+# LLM-SQL
 
 `llmsql` provides APIs to run LLM queries as UDF operators in relational dataframes or SQL tables.
 
@@ -58,3 +58,11 @@ df.llm_query(
 ```
 
 See `examples/pandas` for more examples.
+
+## Optimizations
+Various optimizations as described in ["Optimizing LLM Queries in Relational Workloads"](https://arxiv.org/pdf/2403.05821) have been implemented in the Pandas API.
+
+**Column reordering**: The order of the fields that are provided to the LLMs are reordered to maximize KV cache hits for prefixes. Fields with shorter average string length and less unique number of values are placed first in the prompt.
+
+**Row reordering** Rows in the table are lexicographically sorted to maximize KV cache hits for prefixes.
+
