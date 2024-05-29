@@ -41,7 +41,8 @@ def query(prompt: str,
     
     if reorder_columns:
         fields = get_ordered_columns(df, fields)
-        df = df[fields]
+    
+    df = df[fields]
     
     if reorder_rows:
         df = df.sort_values(by=fields)
