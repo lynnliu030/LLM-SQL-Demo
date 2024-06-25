@@ -3,8 +3,7 @@ import re
 
 from pandas import DataFrame
 
-from llmsql.llm.base import DEFAULT_SYSTEM_PROMPT 
-from llmsql import REGISTERED_MODEL
+from llmsql.llm.base import DEFAULT_SYSTEM_PROMPT, LLM
 
 def get_fields(user_prompt: str) -> str:
     """Get the names of all the fields specified in the user prompt."""
@@ -26,7 +25,8 @@ def get_ordered_columns(df: DataFrame, fields: List[str]):
 
     return reordered_fields
 
-def query(prompt: str, 
+def query(model: LLM, 
+          prompt: str, 
           df: DataFrame, 
           reorder_columns: bool = True,
           reorder_rows: bool = True,
@@ -48,7 +48,7 @@ def query(prompt: str,
 
     # Returns a list of dicts, maintaining column order.
     records = df.to_dict(orient="records")
-    outputs = REGISTERED_MODEL.execute_batch(
+    outputs = model.execute_batch(
         fields=records,
         query=prompt,
         system_prompt=system_prompt
