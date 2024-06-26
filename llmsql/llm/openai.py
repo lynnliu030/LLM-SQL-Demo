@@ -18,8 +18,7 @@ class OpenAI(LLM):
     def execute(self, fields: Dict[str, str], query: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
         fields_json = json.dumps(fields)
 
-        user_prompt = f"Given the following data:\n {fields_json} \n answer the below query:\n"
-        user_prompt += query
+        user_prompt = f"Answer the below query:\n\n{query}\n\ngiven the following data:\n\n{fields_json}"
 
         client = openai.OpenAI(base_url=self.base_url, api_key=self.api_key)
         response = client.chat.completions.create(
