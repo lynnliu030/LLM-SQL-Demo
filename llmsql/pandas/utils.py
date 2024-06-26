@@ -41,8 +41,13 @@ def query(model: LLM,
     
     if reorder_columns:
         fields = get_ordered_columns(df, fields)
-    
-    df = df[fields]
+        df = df[fields]
+    else:
+        # If reorder_columns is False, filter down to columns that appear in the prompt
+        # but maintain original column order
+        original_columns = df.columns
+        filtered_columns = [column for column in original_columns if column in fields]
+        df = df[filtered_columns]
     
     if reorder_rows:
         df = df.sort_values(by=fields)
