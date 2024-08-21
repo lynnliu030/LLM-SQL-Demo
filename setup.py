@@ -6,7 +6,7 @@ setup(
     name="llmsql",
     version="0.1",
     packages=find_packages(),
-    install_requires = ["openai"],
+    install_requires = ["anthropic", "openai"],
     extras_require = {
         "vllm": vllm,
     }
