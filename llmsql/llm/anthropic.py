@@ -90,10 +90,9 @@ class Claude(LLM):
         cost = usage.input_tokens * model_pricing["input_tokens"]
         cost += usage.output_tokens * model_pricing["output_tokens"]
         if hasattr(usage, "cache_creation_input_tokens") and usage.cache_creation_input_tokens is not None:
-            cost += usage.output_tokens * model_pricing["cache_write"]
+            cost += usage.cache_creation_input_tokens * model_pricing["cache_write"]
         if hasattr(usage, "cache_read_input_tokens") and usage.cache_read_input_tokens is not None:
             cost += usage.cache_read_input_tokens * model_pricing["cache_read"]
-        import pdb; pdb.set_trace()
         return cost
 
 
