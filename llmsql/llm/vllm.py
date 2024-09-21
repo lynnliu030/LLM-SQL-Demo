@@ -16,7 +16,7 @@ class vLLM(LLM):
     def __init__(self, engine_args: EngineArgs, sampling_params: Optional[SamplingParams] = None, base_url: Optional[str] = None):
         self.base_url = None
         if base_url:
-            model = is_server_running(base_url)
+            model = is_server_running(base_url + "/models")
             if model:
                 self.base_url = base_url
                 self.model = model
@@ -70,7 +70,7 @@ class vLLM(LLM):
         
         prompt = self._generate_prompt(user_prompt=user_prompt, system_prompt=system_prompt)
         if self.base_url:
-            output = json.loads(post_http_request(self.model, [prompt], temperature=0).content)
+            output = json.loads(post_http_request(self.model, [prompt], temperature=0, api_url=(base_url + "/completions")).content)
         else:
             output = self.engine.generate(prompts=[prompt], sampling_params=self.sampling_params, use_tqdm=False)
         assert len(output) == 1
@@ -87,7 +87,7 @@ class vLLM(LLM):
 
         prompts = [self._generate_prompt(user_prompt=user_prompt, system_prompt=system_prompt) for user_prompt in user_prompts]
         if self.base_url:
-            request_outputs = json.loads(post_http_request(self.model, prompts, temperature=0).content)
+            request_outputs = json.loads(post_http_request(self.model, prompts, temperature=0, api_url=(base_url + "/completions")).content)
         else:
             request_outputs = self.engine.generate(prompts=prompts, sampling_params=self.sampling_params)
         assert len(request_outputs) == len(fields)
