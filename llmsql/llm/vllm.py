@@ -10,7 +10,7 @@ except ImportError as e:
 from vllm import EngineArgs, LLM as LLMEntrypoint, SamplingParams
 
 from llmsql.llm.base import DEFAULT_SYSTEM_PROMPT, LLM
-from llmsql.utils import post_http_request, is_server_running, get_tokenizer
+from llmsql.pandas.utils import post_http_request, is_server_running, get_tokenizer
 
 class vLLM(LLM):
     def __init__(self, engine_args: EngineArgs, sampling_params: Optional[SamplingParams] = None, base_url: Optional[str] = None):
