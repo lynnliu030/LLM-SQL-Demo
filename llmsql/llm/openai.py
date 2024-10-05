@@ -8,7 +8,7 @@ OPENAI_MODELS = ["gpt-3.5-turbo", "gpt-4"]
 
 class OpenAI(LLM):
     def __init__(self, base_url: str, api_key: str, model: str = "gpt-3.5-turbo"):
-        if model not in OPENAI_MODELS:
+        if not base_url and model not in OPENAI_MODELS:
             raise ValueError(f"Received {model} which is an unsupported model. Supported models are f{OPENAI_MODELS}")
         self.model = model
         self.base_url = base_url
